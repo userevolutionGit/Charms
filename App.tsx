@@ -6,7 +6,7 @@ import {
   Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal, 
   Cpu, Package, Globe, Hash, Info, ArrowRight, Layers, 
   Lock, RefreshCw, Smartphone, ChevronLeft, ChevronDown, HelpCircle,
-  BookOpen, FileText, Activity
+  BookOpen, FileText, Activity, Box
 } from 'lucide-react';
 import { Charm, CharmType, GenerationState, WalletConfig } from './types';
 import { 
@@ -29,7 +29,7 @@ const AccordionItem: React.FC<{ title: string; children: React.ReactNode; isOpen
       </div>
       <ChevronDown className={`w-4 h-4 text-slate-600 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`} />
     </button>
-    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1500px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
+    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
       <div className="px-16 text-slate-400 prose prose-invert prose-sm max-w-none">
         {children}
       </div>
@@ -45,7 +45,7 @@ const App: React.FC = () => {
   const [appId, setAppId] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [onboardingTab, setOnboardingTab] = useState<'welcome' | 'encyclopedia'>('welcome');
-  const [openAccordion, setOpenAccordion] = useState<string | null>('toad');
+  const [openAccordion, setOpenAccordion] = useState<string | null>('tooling');
   
   const [wallet] = useState<WalletConfig>({
     fundingUtxo: "2d6d1603f0738085f2035d496baf2b91a639d204b414ea180beb417a3e09f84e:1",
@@ -70,15 +70,12 @@ const App: React.FC = () => {
   const handleForge = async () => {
     if (!prompt.trim()) return;
 
-    setGenState({ isGenerating: true, step: 'Enchanting UTXO...', progress: 10, logs: ["Initiating client-side validation logic..."] });
+    setGenState({ isGenerating: true, step: 'Forging via charms-lib...', progress: 10, logs: ["charms-lib: Initializing RISC-V workspace...", "cargo: checking dependencies..."] });
     try {
-      const systemContext = `Protocol Context: ${activeType}. 
-Whitepaper goals: client-side validation, recursive proofs, unchained portability. 
-Use Case: ${prompt}.
-Format the response in structured, professional Markdown.`;
+      const systemContext = `Protocol Context: ${activeType}. Using charms-lib for proof orchestration. Use Case: ${prompt}. Format output in professional Markdown.`;
       
       const result = await forgeCharm(systemContext, (step) => {
-        addLog(step);
+        addLog(`charms-lib: ${step}`);
         setGenState(prev => ({ ...prev, step, progress: Math.min(prev.progress + 15, 95) }));
       });
       const newCharm: Charm = {
@@ -93,7 +90,7 @@ Format the response in structured, professional Markdown.`;
       };
       setCharms(prev => [...prev, newCharm]);
       setPrompt('');
-      addLog("Artifact enchanted with recursive ZK proof metadata.");
+      addLog("charms-lib: Artifact compiled to ZK-witness. Ready for enchantment.");
     } catch (error) {
       console.error("Forge failed:", error);
       addLog("ERROR: Reasoning sync failed.");
@@ -103,12 +100,12 @@ Format the response in structured, professional Markdown.`;
   };
 
   const handleProve = async (charm: Charm) => {
-    setGenState({ isGenerating: true, step: 'Casting Spell Proof', progress: 0, logs: ["$ charms spell prove --app-id=" + appId] });
+    setGenState({ isGenerating: true, step: 'charms-lib proofing', progress: 0, logs: ["$ charms spell prove --app-id=" + appId] });
     const phases = [
-      { msg: "Compiling Rust contract to RISC-V binary...", progress: 20 },
-      { msg: "Generating recursive ZK-SNARK witness...", progress: 45 },
-      { msg: "Verifying all pre-requisite transaction spells...", progress: 70 },
-      { msg: "Finalizing Groth16 proof envelope...", progress: 95 },
+      { msg: "Compiling logic to RISC-V ELF via charms-lib...", progress: 20 },
+      { msg: "Requesting SP1 zkVM witness generation...", progress: 45 },
+      { msg: "Verifying recursive spell chain...", progress: 70 },
+      { msg: "Wrapping in Groth16 envelope...", progress: 95 },
     ];
     for (const phase of phases) {
       addLog(phase.msg);
@@ -123,15 +120,15 @@ Format the response in structured, professional Markdown.`;
   };
 
   const handleBroadcast = async (charm: Charm) => {
-    setGenState({ isGenerating: true, step: 'Inscribing to Bitcoin', progress: 50, logs: ["$ b submitpackage [commit_hex, spell_hex]"] });
+    setGenState({ isGenerating: true, step: 'Inscribing Spell', progress: 50, logs: ["charms-lib: Preparing Bitcoin Taproot envelope..."] });
     await new Promise(r => setTimeout(r, 1200));
     setCharms(prev => prev.map(c => c.id === charm.id ? { ...c, status: 'minted' } : c));
     setGenState(prev => ({ ...prev, isGenerating: false }));
   };
 
   const handleBeam = async (charm: Charm, targetChain: 'Cardano' | 'Dogecoin') => {
-    setGenState({ isGenerating: true, step: `Beaming to ${targetChain}`, progress: 0, logs: [`Initiating cross-chain transport to ${targetChain}...`] });
-    const phases = [{ msg: `Creating placeholder UTXO on ${targetChain}...`, progress: 25 }, { msg: "Creating Beaming Spell on Bitcoin...", progress: 50 }, { msg: "Constructing SHA256 mapping...", progress: 75 }, { msg: "Materializing on target ledger...", progress: 100 }];
+    setGenState({ isGenerating: true, step: `Beaming via charms-lib`, progress: 0, logs: [`charms-lib: Initiating native transport to ${targetChain}...`] });
+    const phases = [{ msg: "Calculating destination UTXO mapping...", progress: 25 }, { msg: "Generating Beam Proof...", progress: 50 }, { msg: "Inscribing beam-out on Bitcoin...", progress: 75 }, { msg: "Materializing on target ledger...", progress: 100 }];
     for (const phase of phases) {
       addLog(phase.msg);
       setGenState(prev => ({ ...prev, progress: phase.progress }));
@@ -173,23 +170,17 @@ Format the response in structured, professional Markdown.`;
 
           <section>
             <h2 className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 px-2 flex items-center gap-2">
-              <Info className="w-3 h-3" /> Protocol Help
+              <Info className="w-3 h-3" /> Tooling
             </h2>
             <div className="space-y-2">
-              {[
-                { label: "ToAD Model", desc: "Improved ledger model satisfying predicates F:(ins, outs, x, w) → Bool." },
-                { label: "recursive zkVM", desc: "Enables off-chain validation without historical traversal." },
-              ].map((item, i) => (
-                <div key={i} className="p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/10">
-                  <p className="text-[9px] text-indigo-300 font-bold uppercase mb-1">{item.label}</p>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">{item.desc}</p>
-                </div>
-              ))}
+              <div className="p-3 bg-slate-900/50 rounded-lg border border-white/5 font-mono text-[9px] text-emerald-400">
+                $ cargo add charms-lib
+              </div>
               <button 
-                onClick={() => { setOnboardingTab('encyclopedia'); setShowOnboarding(true); }}
+                onClick={() => { setOnboardingTab('encyclopedia'); setOpenAccordion('tooling'); setShowOnboarding(true); }}
                 className="w-full py-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest hover:text-indigo-300 flex items-center justify-center gap-2"
               >
-                <BookOpen className="w-3 h-3" /> Navigator
+                <Terminal className="w-3 h-3" /> Dev Docs
               </button>
             </div>
           </section>
@@ -200,7 +191,7 @@ Format the response in structured, professional Markdown.`;
             onClick={() => { setOnboardingTab('welcome'); setShowOnboarding(true); }}
             className="w-full py-2 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-bold text-slate-400 flex items-center justify-center gap-2 transition-all uppercase tracking-widest"
           >
-            <Layers className="w-3 h-3" /> Whitepaper Abstract
+            <Layers className="w-3 h-3" /> Protocol Abstract
           </button>
         </div>
       </aside>
@@ -217,11 +208,11 @@ Format the response in structured, professional Markdown.`;
                 </div>
               </div>
               <div className="space-y-4">
-                <h2 className="text-4xl font-outfit font-black tracking-tight text-white uppercase">
-                  Enchant Bitcoin
+                <h2 className="text-4xl font-outfit font-black tracking-tight text-white uppercase leading-none">
+                  Unchain Bitcoin
                 </h2>
                 <p className="text-slate-500 text-lg leading-relaxed font-light">
-                  Forge smart assets natively on the Bitcoin ledger using recursive ZK proofs and the ToAD eUTXO model.
+                  Programmable assets via <strong>charms-lib</strong>. Enchanted UTXOs powered by recursive SP1 proofs.
                 </p>
               </div>
             </div>
@@ -248,7 +239,7 @@ Format the response in structured, professional Markdown.`;
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {charm.status === 'draft' && <button onClick={() => handleProve(charm)} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><Cpu className="w-3.5 h-3.5" /> Prove</button>}
+                    {charm.status === 'draft' && <button onClick={() => handleProve(charm)} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><Cpu className="w-3.5 h-3.5" /> Generate Proof</button>}
                     {charm.status === 'ready_to_broadcast' && <button onClick={() => handleBroadcast(charm)} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><Zap className="w-3.5 h-3.5" /> Enchant</button>}
                     {charm.status === 'minted' && <button onClick={() => handleBeam(charm, 'Cardano')} className="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Beam</button>}
                   </div>
@@ -269,10 +260,10 @@ Format the response in structured, professional Markdown.`;
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="flex flex-wrap justify-center gap-2">
               {[
-                { type: CharmType.LOGIC, label: "App Contract", icon: Code },
-                { type: CharmType.STABLECOIN, label: "Self-Auditing Stablecoin", icon: Smartphone },
-                { type: CharmType.XBTC, label: "Unchained Bitcoin (xBTC)", icon: Zap },
-                { type: CharmType.FUNGIBLE, label: "eUTXO Token", icon: Layers }
+                { type: CharmType.LOGIC, label: "Logic Contract", icon: Code },
+                { type: CharmType.STABLECOIN, label: "Stablecoin", icon: Smartphone },
+                { type: CharmType.XBTC, label: "xBTC Protocol", icon: Zap },
+                { type: CharmType.FUNGIBLE, label: "eUTXO Asset", icon: Layers }
               ].map(t => (
                 <button 
                   key={t.type}
@@ -289,7 +280,7 @@ Format the response in structured, professional Markdown.`;
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleForge())}
-                  placeholder={`Forge a ${activeType.toLowerCase()} charm...`}
+                  placeholder={`Describe charm logic for charms-lib compilation...`}
                   className="flex-1 bg-transparent border-none focus:ring-0 px-6 py-4 text-slate-200 text-lg placeholder-slate-700 min-h-[60px] max-h-40 resize-none font-light leading-relaxed"
                   rows={1}
                 />
@@ -300,7 +291,7 @@ Format the response in structured, professional Markdown.`;
         </div>
       </main>
 
-      {/* Onboarding Overlay - Encyclopedia Concept Navigator */}
+      {/* Onboarding Overlay */}
       {showOnboarding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
           <div className="bg-[#0f0f1a] border border-white/10 rounded-[3rem] max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -312,156 +303,118 @@ Format the response in structured, professional Markdown.`;
                     <BookOpen className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-outfit font-black tracking-tight uppercase leading-tight">Protocol Navigator</h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Client-Side Validation & zkVM Evidence</p>
+                    <h2 className="text-2xl font-outfit font-black tracking-tight uppercase leading-tight">Charms Navigator</h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Protocol implementation via charms-lib</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setOnboardingTab(onboardingTab === 'welcome' ? 'encyclopedia' : 'welcome')}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all border border-white/5"
-                  >
-                    {onboardingTab === 'welcome' ? 'Technical Spec' : 'Whitepaper Abstract'}
-                  </button>
-                  <button onClick={() => setShowOnboarding(false)} className="p-3 hover:bg-white/5 rounded-full text-slate-500"><Terminal className="w-5 h-5" /></button>
-                </div>
+                <button onClick={() => setShowOnboarding(false)} className="p-3 hover:bg-white/5 rounded-full text-slate-500 transition-colors"><Terminal className="w-5 h-5" /></button>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
-                {onboardingTab === 'welcome' ? (
-                  <div className="prose prose-invert max-w-none">
-                    <h3 className="text-indigo-400 font-outfit uppercase">Abstract</h3>
-                    <p className="text-slate-400 leading-relaxed font-light">
-                      Bitcoin remains the heart of the crypto economy, yet its poor programmability and scalability have capped its potential. Enter **Charms** — a revolutionary protocol that “enchants” Bitcoin, enabling programmable and portable assets natively on its ledger. Leveraging client-side validation of recursive zkVM proofs, Charms eliminates the need for bridges, trusted validators, or transaction graph traversal.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <Activity className="w-6 h-6 text-indigo-400 mb-4" />
-                        <h4 className="text-white uppercase mb-2">Unchained</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">State verified by recursive zk-proofs, not a single ledger. Materialize natively on any chain.</p>
-                      </div>
-                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <Smartphone className="w-6 h-6 text-indigo-400 mb-4" />
-                        <h4 className="text-white uppercase mb-2">Client-Side</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">Validation happens off-chain. Clients read spells and verify Groth16 proofs locally.</p>
-                      </div>
-                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <Globe className="w-6 h-6 text-indigo-400 mb-4" />
-                        <h4 className="text-white uppercase mb-2">Chain Agnostic</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">Seamlessly "beam" assets between Bitcoin, Cardano, and other UTXO blockchains.</p>
-                      </div>
+                <div className="space-y-2">
+                  <AccordionItem 
+                    title="Developer Tooling" 
+                    isOpen={openAccordion === 'tooling'} 
+                    onClick={() => setOpenAccordion(openAccordion === 'tooling' ? null : 'tooling')}
+                    icon={<Box className="w-4 h-4" />}
+                  >
+                    <p>To start building with the unchained standard, add the official crate to your Rust project:</p>
+                    <div className="p-4 bg-black/60 rounded-xl font-mono text-emerald-400 border border-white/5 mb-6">
+                      $ cargo add charms-lib
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <AccordionItem 
-                      title="ToAD: Tokens as App Data" 
-                      isOpen={openAccordion === 'toad'} 
-                      onClick={() => setOpenAccordion(openAccordion === 'toad' ? null : 'toad')}
-                      icon={<FileText className="w-4 h-4" />}
-                    >
-                      <p>Charms started as ToAD — a fresh take on an Extended UTXO model. Proposed as an improved ledger model for zkBitcoin, it satisfies a validation predicate signature:</p>
-                      
-                      <div className="p-4 bg-black/40 rounded-xl font-mono text-indigo-400 text-center mb-6 border border-white/5">
-                        F : (ins, outs, x, w) → Bool
-                      </div>
-                      
-                      <p className="font-bold text-white uppercase text-[10px] tracking-widest mb-2">Technical Definitions:</p>
-                      <ul className="list-disc pl-5 mb-6">
-                        <li><strong>ins</strong>: set of outputs spent by the transaction.</li>
-                        <li><strong>outs</strong>: set of outputs created by the transaction.</li>
-                        <li><strong>x</strong>: public redeeming (or spending) data necessary to validate the transaction.</li>
-                        <li><strong>w</strong>: private witness data necessary to validate the transaction (e.g. pre-images).</li>
-                      </ul>
+                    <p className="text-xs text-slate-500 mb-4">This library provides the necessary primitives for CBOR serialization, Groth16 proof generation, and Taproot spell orchestration.</p>
+                    
+                    <h4 className="text-white uppercase text-[10px] tracking-widest mb-4">Rust Implementation Example:</h4>
+                    <pre className="bg-black/80 p-5 rounded-2xl text-[11px] leading-relaxed text-indigo-300 border border-white/5 overflow-x-auto">
+{`use charms_lib::{App, Transaction, Data, UtxoId};
+use charms_lib::crypto::verify_zk_proof;
 
-                      <p className="font-bold text-white uppercase text-[10px] tracking-widest mb-4">Implementation Pseudo-code:</p>
-                      <pre className="bg-black/60 p-5 rounded-2xl text-[11px] leading-relaxed text-indigo-200 border border-white/5 overflow-x-auto">
-{`// 1. Define the Application Structure
-struct App {
-  tag: char,      // 't' for tokens, 'n' for NFTs
-  identity: B32,  // 32-byte unique asset ID
-  vk: B32         // Verification Key hash of logic
-}
+/// The canonical ToAD predicate implementation
+pub fn app_contract(
+    app: &App, 
+    tx: &Transaction, 
+    x: &Data, 
+    w: &Data
+) -> bool {
+    // 1. Verify logic against App Verification Key (vk)
+    let logic_valid = verify_zk_proof(&app.vk, tx, x, w);
+    
+    // 2. Specialized handling for fungible tokens (tag 't')
+    if app.tag == 't' {
+        let sum_ins: u64 = tx.ins.values()
+            .filter_map(|charms| charms.get(app))
+            .map(|data| data.as_u64())
+            .sum();
+            
+        let sum_outs: u64 = tx.outs.iter()
+            .filter_map(|charms| charms.get(app))
+            .map(|data| data.as_u64())
+            .sum();
+            
+        return logic_valid && (sum_ins == sum_outs);
+    }
 
-// 2. Define the Enchanted UTXO
-struct UTXO {
-  id: UTXO_ID,
-  // The state map: validation predicate -> state data
-  charms: Map<App, Data> 
-}
-
-// 3. The Validation Predicate F
-function F(app: App, tx: Transaction, x: Public, w: Private) -> Bool {
-  // Logic MUST satisfy the App's Verification Key (vk)
-  const is_valid_logic = verify_zk_proof(app.vk, tx, x, w);
-  
-  if (app.tag === 't') {
-    // Standard Token Preservation: Sum(ins) === Sum(outs)
-    const sum_in = tx.ins.reduce((s, u) => s + u.charms.get(app).amount, 0);
-    const sum_out = tx.outs.reduce((s, u) => s + u.charms.get(app).amount, 0);
-    return is_valid_logic && (sum_in === sum_out);
-  }
-  
-  return is_valid_logic;
+    logic_valid
 }`}
-                      </pre>
-                    </AccordionItem>
+                    </pre>
+                  </AccordionItem>
 
-                    <AccordionItem 
-                      title="Spells and Spells-Data" 
-                      isOpen={openAccordion === 'spells'} 
-                      onClick={() => setOpenAccordion(openAccordion === 'spells' ? null : 'spells')}
-                      icon={<Zap className="w-4 h-4" />}
-                    >
-                      <p>Spells are the magic that creates charms. A spell enchants a transaction. It is included in a Taproot witness envelope:</p>
-                      <pre className="bg-black/60 p-4 rounded-xl text-[10px] text-indigo-300">
+                  <AccordionItem 
+                    title="ToAD: Tokens as App Data" 
+                    isOpen={openAccordion === 'toad'} 
+                    onClick={() => setOpenAccordion(openAccordion === 'toad' ? null : 'toad')}
+                    icon={<FileText className="w-4 h-4" />}
+                  >
+                    <p>Charms started as ToAD — a fresh take on an Extended UTXO model. A transaction involving zkBitcoin apps satisfies a validation predicate with signature:</p>
+                    <div className="p-4 bg-black/40 rounded-xl font-mono text-indigo-400 text-center mb-6 border border-white/5">
+                      F : (ins, outs, x, w) → Bool
+                    </div>
+                    <ul className="list-disc pl-5">
+                      <li><strong>ins/outs</strong>: UTXO sets defined in <code>charms-lib</code>.</li>
+                      <li><strong>x (Public)</strong>: Redeeming data (signatures, etc).</li>
+                      <li><strong>w (Witness)</strong>: Private data for ZK-witness generation.</li>
+                    </ul>
+                  </AccordionItem>
+
+                  <AccordionItem 
+                    title="Spells & Taproot Envelopes" 
+                    isOpen={openAccordion === 'spells'} 
+                    onClick={() => setOpenAccordion(openAccordion === 'spells' ? null : 'spells')}
+                    icon={<Zap className="w-4 h-4" />}
+                  >
+                    <p>Spells "magically" enchant Bitcoin transactions. <code>charms-lib</code> handles the generation of the Taproot witness envelope:</p>
+                    <pre className="bg-black/60 p-4 rounded-xl text-[10px] text-indigo-300">
 {`OP_FALSE
 OP_IF
  OP_PUSH "spell"
- OP_PUSH $spell_data
- OP_PUSH $proof_data
+ OP_PUSH $spell_data   // CBOR-encoded NormalizedSpell
+ OP_PUSH $proof_data   // Groth16 Proof
 OP_ENDIF`}
-                      </pre>
-                      <p>A spell is correct if it parses, makes sense for the tx, and has a valid proof. Double-spending is prevented by Bitcoin base layer.</p>
-                    </AccordionItem>
+                    </pre>
+                  </AccordionItem>
 
-                    <AccordionItem 
-                      title="Recursive zkVM Proofs" 
-                      isOpen={openAccordion === 'proofs'} 
-                      onClick={() => setOpenAccordion(openAccordion === 'proofs' ? null : 'proofs')}
-                      icon={<Activity className="w-4 h-4" />}
-                    >
-                      <p>Charms client library doesn't need to traverse transaction history. Recursive Groth16 proofs attest to:</p>
-                      <ol>
-                        <li>All pre-requisite transactions produced the charms in their outputs (correct spells).</li>
-                        <li>All Charms app contracts in this transaction are satisfied (satisfied proofs).</li>
-                      </ol>
-                      <p>This makes every client a Charms validator, even web or mobile apps.</p>
-                    </AccordionItem>
-
-                    <AccordionItem 
-                      title="Beaming Protcol" 
-                      isOpen={openAccordion === 'beaming'} 
-                      onClick={() => setOpenAccordion(openAccordion === 'beaming' ? null : 'beaming')}
-                      icon={<Globe className="w-4 h-4" />}
-                    >
-                      <p>Beaming decouples Charms from the underlying blockchain. Assets move to other chains (and back to Bitcoin) natively:</p>
-                      <ul>
-                        <li><strong>Chain C (Dest)</strong>: Create "placeholder" UTXO.</li>
-                        <li><strong>Chain B (Src)</strong>: Create Charms output added to <code>beamed_outs</code> mapping with the SHA256 hash of the placeholder ID.</li>
-                      </ul>
-                      <p>Apps become cross-chain without trying to become cross-chain.</p>
-                    </AccordionItem>
-                  </div>
-                )}
+                  <AccordionItem 
+                    title="Recursive Proofs" 
+                    isOpen={openAccordion === 'proofs'} 
+                    onClick={() => setOpenAccordion(openAccordion === 'proofs' ? null : 'proofs')}
+                    icon={<Activity className="w-4 h-4" />}
+                  >
+                    <p>The <code>charms-spell-checker</code> program verifies that:</p>
+                    <ol>
+                      <li>The spell is well-formed.</li>
+                      <li>The transaction satisfies all app contracts.</li>
+                      <li><strong>Recursion</strong>: All parent spell proofs are correct.</li>
+                    </ol>
+                  </AccordionItem>
+                </div>
               </div>
 
-              <div className="pt-8 border-t border-white/5 mt-8 flex flex-col md:flex-row gap-4 items-center">
+              <div className="pt-8 border-t border-white/5 mt-8">
                 <button 
                   onClick={() => setShowOnboarding(false)}
                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 group"
                 >
-                  Launch Forge Studio <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  Enter Forge Studio <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
