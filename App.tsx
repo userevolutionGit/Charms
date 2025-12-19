@@ -1,15 +1,41 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Sparkles, History, Send, Loader2, 
   Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal, 
   Cpu, Package, Globe, Hash, Info, ArrowRight, Layers, 
-  Lock, RefreshCw, Smartphone
+  Lock, RefreshCw, Smartphone, ChevronLeft, ChevronDown, HelpCircle,
+  BookOpen, FileText, Activity
 } from 'lucide-react';
 import { Charm, CharmType, GenerationState, WalletConfig } from './types';
 import { 
   forgeCharm, STUDIO_VK, MOCK_UTXO, sha256, randomHex
 } from './geminiService';
+
+const AccordionItem: React.FC<{ title: string; children: React.ReactNode; isOpen: boolean; onClick: () => void; icon: React.ReactNode }> = ({ title, children, isOpen, onClick, icon }) => (
+  <div className="border-b border-white/5 last:border-none">
+    <button 
+      onClick={onClick}
+      className="w-full py-5 flex items-center justify-between text-left group transition-colors hover:bg-white/[0.02] px-4 rounded-lg"
+    >
+      <div className="flex items-center gap-4">
+        <div className={`p-2 rounded-lg transition-colors ${isOpen ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-500 group-hover:text-slate-300'}`}>
+          {icon}
+        </div>
+        <span className={`text-sm font-outfit font-bold uppercase tracking-wider transition-colors ${isOpen ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+          {title}
+        </span>
+      </div>
+      <ChevronDown className={`w-4 h-4 text-slate-600 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`} />
+    </button>
+    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1500px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
+      <div className="px-16 text-slate-400 prose prose-invert prose-sm max-w-none">
+        {children}
+      </div>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -18,6 +44,8 @@ const App: React.FC = () => {
   const [genState, setGenState] = useState<GenerationState>({ isGenerating: false, step: '', progress: 0, logs: [] });
   const [appId, setAppId] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [onboardingTab, setOnboardingTab] = useState<'welcome' | 'encyclopedia'>('welcome');
+  const [openAccordion, setOpenAccordion] = useState<string | null>('toad');
   
   const [wallet] = useState<WalletConfig>({
     fundingUtxo: "2d6d1603f0738085f2035d496baf2b91a639d204b414ea180beb417a3e09f84e:1",
@@ -44,7 +72,11 @@ const App: React.FC = () => {
 
     setGenState({ isGenerating: true, step: 'Enchanting UTXO...', progress: 10, logs: ["Initiating client-side validation logic..."] });
     try {
-      const systemContext = `Protocol Context: ${activeType}. Whitepaper goals: client-side validation, recursive proofs, unchained portability. Use Case: ${prompt}`;
+      const systemContext = `Protocol Context: ${activeType}. 
+Whitepaper goals: client-side validation, recursive proofs, unchained portability. 
+Use Case: ${prompt}.
+Format the response in structured, professional Markdown.`;
+      
       const result = await forgeCharm(systemContext, (step) => {
         addLog(step);
         setGenState(prev => ({ ...prev, step, progress: Math.min(prev.progress + 15, 95) }));
@@ -72,77 +104,45 @@ const App: React.FC = () => {
 
   const handleProve = async (charm: Charm) => {
     setGenState({ isGenerating: true, step: 'Casting Spell Proof', progress: 0, logs: ["$ charms spell prove --app-id=" + appId] });
-    
     const phases = [
       { msg: "Compiling Rust contract to RISC-V binary...", progress: 20 },
       { msg: "Generating recursive ZK-SNARK witness...", progress: 45 },
       { msg: "Verifying all pre-requisite transaction spells...", progress: 70 },
       { msg: "Finalizing Groth16 proof envelope...", progress: 95 },
     ];
-
     for (const phase of phases) {
       addLog(phase.msg);
       setGenState(prev => ({ ...prev, progress: phase.progress }));
       await new Promise(r => setTimeout(r, 600));
     }
-
     const commitTx = "02000000000101" + randomHex(64);
     const spellTx = "02000000000102" + randomHex(80);
     const txId = await sha256(spellTx);
-
-    setCharms(prev => prev.map(c => c.id === charm.id ? { 
-      ...c, 
-      status: 'ready_to_broadcast', 
-      commitTx, 
-      spellTx, 
-      txId,
-      appId,
-      vk: STUDIO_VK,
-      ownerAddress: wallet.changeAddress
-    } : c));
-
-    addLog("Recursive proof ready. Spell transaction created.");
+    setCharms(prev => prev.map(c => c.id === charm.id ? { ...c, status: 'ready_to_broadcast', commitTx, spellTx, txId, appId, vk: STUDIO_VK, ownerAddress: wallet.changeAddress } : c));
     setGenState(prev => ({ ...prev, isGenerating: false }));
   };
 
   const handleBroadcast = async (charm: Charm) => {
     setGenState({ isGenerating: true, step: 'Inscribing to Bitcoin', progress: 50, logs: ["$ b submitpackage [commit_hex, spell_hex]"] });
     await new Promise(r => setTimeout(r, 1200));
-    
     setCharms(prev => prev.map(c => c.id === charm.id ? { ...c, status: 'minted' } : c));
-    addLog("Transaction accepted. UTXO enchanted on Testnet4.");
     setGenState(prev => ({ ...prev, isGenerating: false }));
   };
 
   const handleBeam = async (charm: Charm, targetChain: 'Cardano' | 'Dogecoin') => {
     setGenState({ isGenerating: true, step: `Beaming to ${targetChain}`, progress: 0, logs: [`Initiating cross-chain transport to ${targetChain}...`] });
-    
-    const phases = [
-      { msg: `Creating placeholder UTXO on ${targetChain}...`, progress: 25 },
-      { msg: "Creating Beaming Spell on Bitcoin (Source)...", progress: 50 },
-      { msg: "Constructing SHA256 mapping of destination ID...", progress: 75 },
-      { msg: "Materializing on target ledger...", progress: 100 },
-    ];
-
+    const phases = [{ msg: `Creating placeholder UTXO on ${targetChain}...`, progress: 25 }, { msg: "Creating Beaming Spell on Bitcoin...", progress: 50 }, { msg: "Constructing SHA256 mapping...", progress: 75 }, { msg: "Materializing on target ledger...", progress: 100 }];
     for (const phase of phases) {
       addLog(phase.msg);
       setGenState(prev => ({ ...prev, progress: phase.progress }));
       await new Promise(r => setTimeout(r, 800));
     }
-
-    setCharms(prev => prev.map(c => c.id === charm.id ? { 
-      ...c, 
-      status: 'beamed', 
-      currentChain: targetChain,
-      destinationChain: targetChain 
-    } : c));
-
-    addLog(`Beam success. Charm now lives natively on ${targetChain}.`);
+    setCharms(prev => prev.map(c => c.id === charm.id ? { ...c, status: 'beamed', currentChain: targetChain, destinationChain: targetChain } : c));
     setGenState(prev => ({ ...prev, isGenerating: false }));
   };
 
   return (
-    <div className="flex h-screen bg-[#050508] text-slate-100 overflow-hidden font-inter">
+    <div className="flex h-screen bg-[#050508] text-slate-100 overflow-hidden font-inter text-sm">
       {/* Sidebar */}
       <aside className="hidden md:flex w-72 flex-col border-r border-indigo-500/10 bg-[#0a0a12]/90 backdrop-blur-3xl">
         <div className="p-6 border-b border-indigo-500/10">
@@ -173,29 +173,34 @@ const App: React.FC = () => {
 
           <section>
             <h2 className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 px-2 flex items-center gap-2">
-              <Info className="w-3 h-3" /> Protocol Guide
+              <Info className="w-3 h-3" /> Protocol Help
             </h2>
             <div className="space-y-2">
               {[
-                { label: "Enchanted UTXO", desc: "A Bitcoin output carrying programmable state via ZK proofs." },
-                { label: "Spells", desc: "Metadata in the witness script that enchants a transaction." },
-                { label: "Beaming", desc: "Native cross-chain transfer without bridges or custodians." }
+                { label: "ToAD Model", desc: "Improved ledger model satisfying predicates F:(ins, outs, x, w) → Bool." },
+                { label: "recursive zkVM", desc: "Enables off-chain validation without historical traversal." },
               ].map((item, i) => (
                 <div key={i} className="p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/10">
                   <p className="text-[9px] text-indigo-300 font-bold uppercase mb-1">{item.label}</p>
                   <p className="text-[10px] text-slate-500 leading-relaxed font-light">{item.desc}</p>
                 </div>
               ))}
+              <button 
+                onClick={() => { setOnboardingTab('encyclopedia'); setShowOnboarding(true); }}
+                className="w-full py-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest hover:text-indigo-300 flex items-center justify-center gap-2"
+              >
+                <BookOpen className="w-3 h-3" /> Navigator
+              </button>
             </div>
           </section>
         </div>
 
         <div className="p-4 border-t border-indigo-500/10">
           <button 
-            onClick={() => setShowOnboarding(true)}
+            onClick={() => { setOnboardingTab('welcome'); setShowOnboarding(true); }}
             className="w-full py-2 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-bold text-slate-400 flex items-center justify-center gap-2 transition-all uppercase tracking-widest"
           >
-            <Layers className="w-3 h-3" /> View Whitepaper
+            <Layers className="w-3 h-3" /> Whitepaper Abstract
           </button>
         </div>
       </aside>
@@ -216,14 +221,14 @@ const App: React.FC = () => {
                   Enchant Bitcoin
                 </h2>
                 <p className="text-slate-500 text-lg leading-relaxed font-light">
-                  Invoke high-reasoning protocol logic. Enchant UTXOs with recursive ZK proofs. Beam assets natively between chains.
+                  Forge smart assets natively on the Bitcoin ledger using recursive ZK proofs and the ToAD eUTXO model.
                 </p>
               </div>
             </div>
           )}
 
           {charms.map((charm) => (
-            <div key={charm.id} className="max-w-3xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
+            <div key={charm.id} className="max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
               <div className="bg-[#0f0f1a] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-indigo-500/20">
                 <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
                   <div className="flex items-center gap-4">
@@ -242,117 +247,26 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
-                    {charm.status === 'draft' && (
-                      <button 
-                        onClick={() => handleProve(charm)}
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
-                      >
-                        <Cpu className="w-3.5 h-3.5" /> Prove Logic
-                      </button>
-                    )}
-                    {charm.status === 'ready_to_broadcast' && (
-                      <button 
-                        onClick={() => handleBroadcast(charm)}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
-                      >
-                        <Zap className="w-3.5 h-3.5" /> Enchant
-                      </button>
-                    )}
-                    {charm.status === 'minted' && (
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleBeam(charm, 'Cardano')}
-                          className="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" /> Beam to Cardano
-                        </button>
-                        <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/5 px-4 py-2 rounded-xl border border-emerald-400/20">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Inscribed</span>
-                        </div>
-                      </div>
-                    )}
-                    {charm.status === 'beamed' && (
-                       <div className="flex items-center gap-2 text-indigo-400 bg-indigo-400/5 px-4 py-2 rounded-xl border border-indigo-400/20">
-                          <Globe className="w-4 h-4" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Materialized on {charm.currentChain}</span>
-                       </div>
-                    )}
+                    {charm.status === 'draft' && <button onClick={() => handleProve(charm)} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><Cpu className="w-3.5 h-3.5" /> Prove</button>}
+                    {charm.status === 'ready_to_broadcast' && <button onClick={() => handleBroadcast(charm)} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><Zap className="w-3.5 h-3.5" /> Enchant</button>}
+                    {charm.status === 'minted' && <button onClick={() => handleBeam(charm, 'Cardano')} className="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" /> Beam</button>}
                   </div>
                 </div>
 
-                <div className="p-8 space-y-8">
-                  <div className="prose prose-invert max-w-none text-slate-400 text-lg leading-relaxed font-light">
-                    {charm.content.split('\n').map((l, i) => <p key={i}>{l}</p>)}
+                <div className="p-8 md:p-10 space-y-8">
+                  <div className="prose prose-invert prose-slate max-w-none">
+                    <ReactMarkdown>{charm.content}</ReactMarkdown>
                   </div>
-
-                  {(charm.status === 'ready_to_broadcast' || charm.status === 'minted' || charm.status === 'beamed') && (
-                    <div className="p-6 bg-[#050508] border border-white/5 rounded-2xl space-y-4">
-                      <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-[9px] tracking-[0.2em]">
-                            <Package className="w-3.5 h-3.5" /> Recursive ZK Evidence
-                         </div>
-                         <div className="flex items-center gap-1">
-                            <Lock className="w-3 h-3 text-slate-600" />
-                            <span className="text-[8px] text-slate-600 font-bold uppercase">Client-Side Validated</span>
-                         </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="bg-black/40 p-3 rounded-lg font-mono text-[9px] text-slate-500 break-all border border-white/5 max-h-24 overflow-y-auto">
-                          Witness Spell: {charm.spellTx}
-                        </div>
-                        {charm.status === 'beamed' && (
-                          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-[9px] font-mono text-indigo-300">
-                             Transfer Hash: {charm.txId} <br/>
-                             Chain: {charm.currentChain} <br/>
-                             Status: Materialized Natively
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           ))}
-
-          {genState.isGenerating && (
-            <div className="max-w-2xl mx-auto py-8 space-y-8">
-               <div className="flex flex-col items-center justify-center text-center space-y-4">
-                  <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold tracking-tight text-white">{genState.step}</h3>
-                    <div className="w-48 mx-auto bg-slate-900 h-1.5 rounded-full overflow-hidden border border-white/5">
-                      <div className="bg-indigo-600 h-full transition-all duration-500" style={{ width: `${genState.progress}%` }}></div>
-                    </div>
-                  </div>
-               </div>
-
-               <div className="bg-[#050508] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                 <div className="px-4 py-2 bg-white/5 border-b border-white/10 flex items-center gap-2">
-                    <Terminal className="w-3 h-3 text-slate-500" />
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">zkVM Runtime Logs</span>
-                 </div>
-                 <div className="p-4 h-48 overflow-y-auto font-mono text-[10px] text-indigo-300/60 space-y-1.5">
-                    {genState.logs.map((log, i) => (
-                      <p key={i} className="animate-in fade-in duration-300">
-                        <span className="text-slate-700">➜</span> {log}
-                      </p>
-                    ))}
-                    <div className="animate-pulse">_</div>
-                 </div>
-               </div>
-            </div>
-          )}
         </div>
 
-        {/* Action Bar with Templates */}
+        {/* Action Bar */}
         <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-[#050508] via-[#050508]/95 to-transparent">
           <div className="max-w-3xl mx-auto space-y-6">
-            
             <div className="flex flex-wrap justify-center gap-2">
               {[
                 { type: CharmType.LOGIC, label: "App Contract", icon: Code },
@@ -363,96 +277,191 @@ const App: React.FC = () => {
                 <button 
                   key={t.type}
                   onClick={() => setActiveType(t.type)}
-                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-2 transition-all ${activeType === t.type ? 'bg-indigo-600 text-white border-indigo-500 shadow-xl shadow-indigo-500/20' : 'bg-white/5 text-slate-500 border-white/5 hover:border-white/10'}`}
+                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-2 transition-all ${activeType === t.type ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 text-slate-500 border-white/5'}`}
                 >
                   <t.icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               ))}
             </div>
-
             <div className="relative group">
-              <div className="absolute -inset-1 bg-indigo-500/10 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-all duration-700"></div>
               <div className="relative bg-[#10101c]/80 border border-white/10 rounded-[2rem] p-2 flex items-end gap-2 shadow-2xl backdrop-blur-xl">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleForge())}
-                  placeholder={`Describe your ${activeType.toLowerCase()} logic (e.g. "xBTC with recursive yield")...`}
+                  placeholder={`Forge a ${activeType.toLowerCase()} charm...`}
                   className="flex-1 bg-transparent border-none focus:ring-0 px-6 py-4 text-slate-200 text-lg placeholder-slate-700 min-h-[60px] max-h-40 resize-none font-light leading-relaxed"
                   rows={1}
                 />
-                <button
-                  onClick={handleForge}
-                  disabled={!prompt.trim() || genState.isGenerating}
-                  className="p-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl disabled:bg-slate-800 disabled:text-slate-700 transition-all mb-1 mr-1 flex-shrink-0"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
+                <button onClick={handleForge} disabled={!prompt.trim() || genState.isGenerating} className="p-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl disabled:bg-slate-800 transition-all mb-1 mr-1"><Send className="w-5 h-5" /></button>
               </div>
-            </div>
-            
-            <div className="flex justify-center gap-8 text-[8px] text-slate-600 font-bold uppercase tracking-[0.4em]">
-               <span className="flex items-center gap-1.5"><Shield className="w-3 h-3" /> Recursive ZK-Proofs</span>
-               <span className="flex items-center gap-1.5"><Globe className="w-3 h-3" /> Post-Chain Ready</span>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Onboarding Overlay */}
+      {/* Onboarding Overlay - Encyclopedia Concept Navigator */}
       {showOnboarding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#0f0f1a] border border-white/10 rounded-[3rem] max-w-2xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-10 space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-white" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+          <div className="bg-[#0f0f1a] border border-white/10 rounded-[3rem] max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            
+            <div className="p-8 md:p-12 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <BookOpen className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-outfit font-black tracking-tight uppercase">Getting Started</h2>
+                  <div>
+                    <h2 className="text-2xl font-outfit font-black tracking-tight uppercase leading-tight">Protocol Navigator</h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Client-Side Validation & zkVM Evidence</p>
+                  </div>
                 </div>
-                <button onClick={() => setShowOnboarding(false)} className="p-2 hover:bg-white/5 rounded-full text-slate-500"><Terminal className="w-5 h-5" /></button>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-2">
-                    <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center text-indigo-400 mb-2">
-                      <Zap className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Forge Intelligence</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-light">Use Gemini reasoning to define logic contracts based on Bitcoin's unchained metalayer.</p>
-                  </div>
-                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-2">
-                    <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center text-indigo-400 mb-2">
-                      <Cpu className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">ZK-Proof Generation</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-light">Generate Groth16 proofs on a zkVM. Every charm is client-side validated, inheriting Bitcoin's security.</p>
-                  </div>
-                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-2">
-                    <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center text-indigo-400 mb-2">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Cross-Chain Beaming</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-light">Move assets between Bitcoin, Cardano, and beyond. Portability is native; no bridges required.</p>
-                  </div>
-                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-2">
-                    <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center text-indigo-400 mb-2">
-                      <RefreshCw className="w-4 h-4" />
-                    </div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Enchanted UTXOs</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-light">The end of wrapped tokens. Digital assets satisfy direct ownership, programmability, and portability.</p>
-                  </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setOnboardingTab(onboardingTab === 'welcome' ? 'encyclopedia' : 'welcome')}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all border border-white/5"
+                  >
+                    {onboardingTab === 'welcome' ? 'Technical Spec' : 'Whitepaper Abstract'}
+                  </button>
+                  <button onClick={() => setShowOnboarding(false)} className="p-3 hover:bg-white/5 rounded-full text-slate-500"><Terminal className="w-5 h-5" /></button>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-white/5">
+              <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+                {onboardingTab === 'welcome' ? (
+                  <div className="prose prose-invert max-w-none">
+                    <h3 className="text-indigo-400 font-outfit uppercase">Abstract</h3>
+                    <p className="text-slate-400 leading-relaxed font-light">
+                      Bitcoin remains the heart of the crypto economy, yet its poor programmability and scalability have capped its potential. Enter **Charms** — a revolutionary protocol that “enchants” Bitcoin, enabling programmable and portable assets natively on its ledger. Leveraging client-side validation of recursive zkVM proofs, Charms eliminates the need for bridges, trusted validators, or transaction graph traversal.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <Activity className="w-6 h-6 text-indigo-400 mb-4" />
+                        <h4 className="text-white uppercase mb-2">Unchained</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">State verified by recursive zk-proofs, not a single ledger. Materialize natively on any chain.</p>
+                      </div>
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <Smartphone className="w-6 h-6 text-indigo-400 mb-4" />
+                        <h4 className="text-white uppercase mb-2">Client-Side</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">Validation happens off-chain. Clients read spells and verify Groth16 proofs locally.</p>
+                      </div>
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <Globe className="w-6 h-6 text-indigo-400 mb-4" />
+                        <h4 className="text-white uppercase mb-2">Chain Agnostic</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">Seamlessly "beam" assets between Bitcoin, Cardano, and other UTXO blockchains.</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <AccordionItem 
+                      title="ToAD: Tokens as App Data" 
+                      isOpen={openAccordion === 'toad'} 
+                      onClick={() => setOpenAccordion(openAccordion === 'toad' ? null : 'toad')}
+                      icon={<FileText className="w-4 h-4" />}
+                    >
+                      <p>Charms started as ToAD — a fresh take on an Extended UTXO model. Proposed as an improved ledger model for zkBitcoin, it satisfies a validation predicate signature:</p>
+                      
+                      <div className="p-4 bg-black/40 rounded-xl font-mono text-indigo-400 text-center mb-6 border border-white/5">
+                        F : (ins, outs, x, w) → Bool
+                      </div>
+                      
+                      <p className="font-bold text-white uppercase text-[10px] tracking-widest mb-2">Technical Definitions:</p>
+                      <ul className="list-disc pl-5 mb-6">
+                        <li><strong>ins</strong>: set of outputs spent by the transaction.</li>
+                        <li><strong>outs</strong>: set of outputs created by the transaction.</li>
+                        <li><strong>x</strong>: public redeeming (or spending) data necessary to validate the transaction.</li>
+                        <li><strong>w</strong>: private witness data necessary to validate the transaction (e.g. pre-images).</li>
+                      </ul>
+
+                      <p className="font-bold text-white uppercase text-[10px] tracking-widest mb-4">Implementation Pseudo-code:</p>
+                      <pre className="bg-black/60 p-5 rounded-2xl text-[11px] leading-relaxed text-indigo-200 border border-white/5 overflow-x-auto">
+{`// 1. Define the Application Structure
+struct App {
+  tag: char,      // 't' for tokens, 'n' for NFTs
+  identity: B32,  // 32-byte unique asset ID
+  vk: B32         // Verification Key hash of logic
+}
+
+// 2. Define the Enchanted UTXO
+struct UTXO {
+  id: UTXO_ID,
+  // The state map: validation predicate -> state data
+  charms: Map<App, Data> 
+}
+
+// 3. The Validation Predicate F
+function F(app: App, tx: Transaction, x: Public, w: Private) -> Bool {
+  // Logic MUST satisfy the App's Verification Key (vk)
+  const is_valid_logic = verify_zk_proof(app.vk, tx, x, w);
+  
+  if (app.tag === 't') {
+    // Standard Token Preservation: Sum(ins) === Sum(outs)
+    const sum_in = tx.ins.reduce((s, u) => s + u.charms.get(app).amount, 0);
+    const sum_out = tx.outs.reduce((s, u) => s + u.charms.get(app).amount, 0);
+    return is_valid_logic && (sum_in === sum_out);
+  }
+  
+  return is_valid_logic;
+}`}
+                      </pre>
+                    </AccordionItem>
+
+                    <AccordionItem 
+                      title="Spells and Spells-Data" 
+                      isOpen={openAccordion === 'spells'} 
+                      onClick={() => setOpenAccordion(openAccordion === 'spells' ? null : 'spells')}
+                      icon={<Zap className="w-4 h-4" />}
+                    >
+                      <p>Spells are the magic that creates charms. A spell enchants a transaction. It is included in a Taproot witness envelope:</p>
+                      <pre className="bg-black/60 p-4 rounded-xl text-[10px] text-indigo-300">
+{`OP_FALSE
+OP_IF
+ OP_PUSH "spell"
+ OP_PUSH $spell_data
+ OP_PUSH $proof_data
+OP_ENDIF`}
+                      </pre>
+                      <p>A spell is correct if it parses, makes sense for the tx, and has a valid proof. Double-spending is prevented by Bitcoin base layer.</p>
+                    </AccordionItem>
+
+                    <AccordionItem 
+                      title="Recursive zkVM Proofs" 
+                      isOpen={openAccordion === 'proofs'} 
+                      onClick={() => setOpenAccordion(openAccordion === 'proofs' ? null : 'proofs')}
+                      icon={<Activity className="w-4 h-4" />}
+                    >
+                      <p>Charms client library doesn't need to traverse transaction history. Recursive Groth16 proofs attest to:</p>
+                      <ol>
+                        <li>All pre-requisite transactions produced the charms in their outputs (correct spells).</li>
+                        <li>All Charms app contracts in this transaction are satisfied (satisfied proofs).</li>
+                      </ol>
+                      <p>This makes every client a Charms validator, even web or mobile apps.</p>
+                    </AccordionItem>
+
+                    <AccordionItem 
+                      title="Beaming Protcol" 
+                      isOpen={openAccordion === 'beaming'} 
+                      onClick={() => setOpenAccordion(openAccordion === 'beaming' ? null : 'beaming')}
+                      icon={<Globe className="w-4 h-4" />}
+                    >
+                      <p>Beaming decouples Charms from the underlying blockchain. Assets move to other chains (and back to Bitcoin) natively:</p>
+                      <ul>
+                        <li><strong>Chain C (Dest)</strong>: Create "placeholder" UTXO.</li>
+                        <li><strong>Chain B (Src)</strong>: Create Charms output added to <code>beamed_outs</code> mapping with the SHA256 hash of the placeholder ID.</li>
+                      </ul>
+                      <p>Apps become cross-chain without trying to become cross-chain.</p>
+                    </AccordionItem>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-8 border-t border-white/5 mt-8 flex flex-col md:flex-row gap-4 items-center">
                 <button 
                   onClick={() => setShowOnboarding(false)}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 group"
                 >
-                  Enter the Studio <ArrowRight className="w-4 h-4" />
+                  Launch Forge Studio <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
