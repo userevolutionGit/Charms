@@ -1,0 +1,5 @@
+{
+  "name": "Charm Studio",
+  "description": "An AI-powered workspace for forging 'Charms'—intelligent artifacts minted as Bitcoin spells.",
+  "requestFramePermissions": []
+}
