@@ -53,6 +53,12 @@
         .prose code::before, .prose code::after {
             content: "";
         }
+        /* Hide built-in syntax highlighter background to use our container's bg */
+        pre[class*="language-"] {
+          background: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
     </style>
 <script type="importmap">
 {
@@ -62,7 +68,10 @@
     "react/": "https://esm.sh/react@^19.2.3/",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-markdown": "https://esm.sh/react-markdown@^9.0.1"
+    "react-markdown": "https://esm.sh/react-markdown@^9.0.1",
+    "react-syntax-highlighter": "https://esm.sh/react-syntax-highlighter@^15.6.1",
+    "react-syntax-highlighter/dist/esm/styles/prism": "https://esm.sh/react-syntax-highlighter@^15.6.1/dist/esm/styles/prism",
+    "react-syntax-highlighter/": "https://esm.sh/react-syntax-highlighter@^16.1.0/"
   }
 }
 </script>

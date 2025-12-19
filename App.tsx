@@ -1,17 +1,71 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
   Sparkles, History, Send, Loader2, 
   Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal, 
   Cpu, Package, Globe, Hash, Info, ArrowRight, Layers, 
   Lock, RefreshCw, Smartphone, ChevronLeft, ChevronDown, HelpCircle,
-  BookOpen, FileText, Activity, Box, MousePointer2, GitCommit, FileCode
+  BookOpen, FileText, Activity, Box, MousePointer2, GitCommit, FileCode, Copy
 } from 'lucide-react';
 import { Charm, CharmType, GenerationState, WalletConfig } from './types';
 import { 
   forgeCharm, STUDIO_VK, MOCK_UTXO, sha256, randomHex
 } from './geminiService';
+
+// --- Components ---
+
+interface CodeBlockProps {
+  code: string;
+  language: string;
+}
+
+const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group rounded-2xl overflow-hidden bg-[#0a0a14] border border-white/5 my-6 shadow-xl">
+      <div className="flex items-center justify-between px-5 py-2.5 bg-white/[0.03] border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-red-500/40"></div>
+          <div className="w-2 h-2 rounded-full bg-amber-500/40"></div>
+          <div className="w-2 h-2 rounded-full bg-emerald-500/40"></div>
+          <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-slate-500 font-outfit">{language}</span>
+        </div>
+        <button 
+          onClick={handleCopy}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-all border border-white/5"
+        >
+          {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          <span className="text-[9px] font-black uppercase tracking-widest">{copied ? 'Copied' : 'Copy'}</span>
+        </button>
+      </div>
+      <div className="p-4 bg-[#0a0a14]">
+        <SyntaxHighlighter
+          language={language}
+          style={atomDark}
+          customStyle={{
+            background: 'transparent',
+            padding: '0',
+            margin: '0',
+            fontSize: '12px',
+            lineHeight: '1.6',
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+};
 
 const AccordionItem: React.FC<{ title: string; children: React.ReactNode; isOpen: boolean; onClick: () => void; icon: React.ReactNode }> = ({ title, children, isOpen, onClick, icon }) => (
   <div className="border-b border-white/5 last:border-none">
@@ -29,13 +83,15 @@ const AccordionItem: React.FC<{ title: string; children: React.ReactNode; isOpen
       </div>
       <ChevronDown className={`w-4 h-4 text-slate-600 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`} />
     </button>
-    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
+    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[3000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
       <div className="px-16 text-slate-400 prose prose-invert prose-sm max-w-none">
         {children}
       </div>
     </div>
   </div>
 );
+
+// --- Main App ---
 
 const App: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -332,7 +388,25 @@ const App: React.FC = () => {
 
                 <div className="p-8 md:p-10 space-y-8">
                   <div className="prose prose-invert prose-slate max-w-none">
-                    <ReactMarkdown>{charm.content}</ReactMarkdown>
+                    <ReactMarkdown
+                      components={{
+                        code({ node, inline, className, children, ...props }: any) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          return !inline && match ? (
+                            <CodeBlock
+                              code={String(children).replace(/\n$/, '')}
+                              language={match[1]}
+                            />
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        }
+                      }}
+                    >
+                      {charm.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
@@ -405,14 +479,13 @@ const App: React.FC = () => {
                     icon={<Box className="w-4 h-4" />}
                   >
                     <p>To start building with the unchained standard, add the official crate to your Rust project:</p>
-                    <div className="p-4 bg-black/60 rounded-xl font-mono text-emerald-400 border border-white/5 mb-6">
-                      $ cargo add charms-lib
-                    </div>
+                    <CodeBlock code="$ cargo add charms-lib" language="bash" />
                     <p className="text-xs text-slate-500 mb-4">This library provides the necessary primitives for CBOR serialization, Groth16 proof generation, and Taproot spell orchestration.</p>
                     
                     <h4 className="text-white uppercase text-[10px] tracking-widest mb-4">Rust Implementation Example:</h4>
-                    <pre className="bg-black/80 p-5 rounded-2xl text-[11px] leading-relaxed text-indigo-300 border border-white/5 overflow-x-auto">
-{`use charms_lib::{App, Transaction, Data, UtxoId};
+                    <CodeBlock 
+                      language="rust"
+                      code={`use charms_lib::{App, Transaction, Data, UtxoId};
 use charms_lib::crypto::verify_zk_proof;
 
 /// The canonical ToAD predicate implementation
@@ -441,8 +514,7 @@ pub fn app_contract(
     }
 
     logic_valid
-}`}
-                    </pre>
+}`} />
                   </AccordionItem>
 
                   <AccordionItem 
@@ -469,14 +541,35 @@ pub fn app_contract(
                     icon={<Zap className="w-4 h-4" />}
                   >
                     <p>Spells "magically" enchant Bitcoin transactions. <code>charms-lib</code> handles the generation of the Taproot witness envelope:</p>
-                    <pre className="bg-black/60 p-4 rounded-xl text-[10px] text-indigo-300">
-{`OP_FALSE
+                    <CodeBlock 
+                      language="bitcoin-script"
+                      code={`OP_FALSE
 OP_IF
  OP_PUSH "spell"
  OP_PUSH $spell_data   // CBOR-encoded NormalizedSpell
  OP_PUSH $proof_data   // Groth16 Proof
-OP_ENDIF`}
-                    </pre>
+OP_ENDIF`} />
+
+                    <h4 className="text-white uppercase text-[10px] tracking-widest mb-4 mt-6">Validation Pseudo-code:</h4>
+                    <CodeBlock 
+                      language="rust"
+                      code={`struct NormalizedSpell {
+    version: u32,
+    tx: NormalizedTransaction,
+    app_public_inputs: BTreeMap<App, Data>,
+}
+
+fn check_well_formed(spell: NormalizedSpell) -> bool {
+    // Protocol Rules from Whitepaper:
+    // 1. Check version is supported
+    let version_ok = is_supported(spell.version);
+    
+    // 2. Ensure all input/output charms are listed
+    let apps_ok = spell.tx.outs.iter()
+        .all(|charms| charms.keys().all(|app_idx| spell.app_public_inputs.contains_key(app_idx)));
+        
+    version_ok && apps_ok
+}`} />
                   </AccordionItem>
 
                   <AccordionItem 
@@ -491,6 +584,24 @@ OP_ENDIF`}
                       <li>The transaction satisfies all app contracts.</li>
                       <li><strong>Recursion</strong>: All parent spell proofs are correct.</li>
                     </ol>
+
+                    <h4 className="text-white uppercase text-[10px] tracking-widest mb-4 mt-6">Recursive Verification Implementation:</h4>
+                    <CodeBlock 
+                      language="rust"
+                      code={`// Groth16 + SP1 Recursive Logic
+fn verify_recursive_spell(tx: Transaction) -> bool {
+    // 1. Current transaction app satisfaction
+    // F(app, tx, x, w) for all apps in current tx
+    let current_tx_valid = tx.apps().iter()
+        .all(|app| app.contract.verify(&tx, &app.public, &app.witness));
+
+    // 2. Recursive verification of prerequisite spells
+    // Eliminates need to traverse full transaction graph traversal
+    let prerequisites_valid = tx.ins.values()
+        .all(|prereq_tx| is_spell_correct(prereq_tx));
+
+    current_tx_valid && prerequisites_valid
+}`} />
                   </AccordionItem>
                 </div>
               </div>
