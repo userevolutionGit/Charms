@@ -6,7 +6,7 @@ import {
   Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal, 
   Cpu, Package, Globe, Hash, Info, ArrowRight, Layers, 
   Lock, RefreshCw, Smartphone, ChevronLeft, ChevronDown, HelpCircle,
-  BookOpen, FileText, Activity, Box
+  BookOpen, FileText, Activity, Box, MousePointer2, GitCommit, FileCode
 } from 'lucide-react';
 import { Charm, CharmType, GenerationState, WalletConfig } from './types';
 import { 
@@ -67,12 +67,13 @@ const App: React.FC = () => {
     setGenState(prev => ({ ...prev, logs: [...prev.logs, `[${new Date().toLocaleTimeString()}] ${log}`] }));
   };
 
-  const handleForge = async () => {
-    if (!prompt.trim()) return;
+  const handleForge = async (customPrompt?: string) => {
+    const finalPrompt = customPrompt || prompt;
+    if (!finalPrompt.trim()) return;
 
     setGenState({ isGenerating: true, step: 'Forging via charms-lib...', progress: 10, logs: ["charms-lib: Initializing RISC-V workspace...", "cargo: checking dependencies..."] });
     try {
-      const systemContext = `Protocol Context: ${activeType}. Using charms-lib for proof orchestration. Use Case: ${prompt}. Format output in professional Markdown.`;
+      const systemContext = `Protocol Context: ${activeType}. Using charms-lib for proof orchestration. Use Case: ${finalPrompt}. Format output in professional Markdown. Include specific technical details on how 'charms-lib' handles the predicate F(ins, outs, x, w).`;
       
       const result = await forgeCharm(systemContext, (step) => {
         addLog(`charms-lib: ${step}`);
@@ -81,7 +82,7 @@ const App: React.FC = () => {
       const newCharm: Charm = {
         id: Math.random().toString(36).substr(2, 9),
         type: activeType,
-        title: prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt,
+        title: finalPrompt.length > 30 ? finalPrompt.substring(0, 30) + '...' : finalPrompt,
         content: result.content,
         timestamp: Date.now(),
         status: 'draft',
@@ -198,22 +199,106 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-12 pb-64">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-16 pb-64">
           {charms.length === 0 && !genState.isGenerating && (
-            <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-8 py-20">
-              <div className="relative">
-                <div className="absolute inset-0 bg-indigo-500 blur-[80px] opacity-10 animate-pulse"></div>
-                <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl relative border border-white/10">
-                  <Zap className="w-10 h-10 text-white fill-white" />
+            <div className="max-w-4xl mx-auto space-y-16 py-10">
+              {/* Header */}
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">
+                  <Sparkles className="w-3 h-3" /> AI-Powered eUTXO Factory
                 </div>
-              </div>
-              <div className="space-y-4">
-                <h2 className="text-4xl font-outfit font-black tracking-tight text-white uppercase leading-none">
+                <h2 className="text-5xl font-outfit font-black tracking-tight text-white uppercase leading-none">
                   Unchain Bitcoin
                 </h2>
-                <p className="text-slate-500 text-lg leading-relaxed font-light">
-                  Programmable assets via <strong>charms-lib</strong>. Enchanted UTXOs powered by recursive SP1 proofs.
+                <p className="text-slate-500 text-lg leading-relaxed font-light max-w-2xl mx-auto">
+                  Forge programmable tokens, self-auditing stablecoins, and cross-chain artifacts. Enchanted UTXOs powered by <strong>charms-lib</strong>.
                 </p>
+              </div>
+
+              {/* Workflow Map */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                 <div className="hidden md:block absolute top-1/2 left-0 right-0 h-px bg-indigo-500/10 -translate-y-1/2 z-0"></div>
+                 {[
+                   { step: 1, title: 'Forge', icon: Zap, desc: 'Describe logic & compile RISC-V' },
+                   { step: 2, title: 'Prove', icon: Cpu, desc: 'Generate recursive ZK-SNARK' },
+                   { step: 3, title: 'Enchant', icon: Lock, desc: 'Inscribe Taproot Spell' },
+                   { step: 4, title: 'Beam', icon: Globe, desc: 'Native cross-chain transport' }
+                 ].map((s) => (
+                   <div key={s.step} className="relative z-10 bg-[#0f0f1a] border border-white/5 p-5 rounded-2xl flex flex-col items-center text-center space-y-3 group hover:border-indigo-500/30 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                        <s.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Step 0{s.step}</span>
+                        <h4 className="text-xs font-black text-white uppercase tracking-widest">{s.title}</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-500 leading-tight">{s.desc}</p>
+                   </div>
+                 ))}
+              </div>
+
+              {/* Creation Guides */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-black text-slate-500 uppercase tracking-[0.3em] px-2 flex items-center gap-3">
+                  <MousePointer2 className="w-4 h-4" /> Recommended Blueprints
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { 
+                      title: "Fungible Token (eUTXO)", 
+                      desc: "Create a standard 't' tag token using ToAD preservation logic. Total input amount must equal total output.", 
+                      prompt: "Create a fungible token named 'GoldCoin' with tag 't'. Implement standard ToAD amount preservation in the app_contract logic where sum of inputs equals sum of outputs.",
+                      icon: Layers,
+                      type: CharmType.FUNGIBLE
+                    },
+                    { 
+                      title: "Self-Auditing Stablecoin", 
+                      desc: "A stablecoin that requires a ZK-proof of off-chain liquidity (e.g. CashApp) before any new minting occurs.", 
+                      prompt: "Forge a stablecoin charm named 'cUSD' that implements a self-auditing logic. The app_contract must verify a public witness 'x' representing a proof of reserve from a custodian account before satisfying the predicate.",
+                      icon: Smartphone,
+                      type: CharmType.STABLECOIN
+                    },
+                    { 
+                      title: "Unchained Bitcoin (xBTC)", 
+                      desc: "A programmable BTC representation that can be beamed natively to Cardano without bridges.", 
+                      prompt: "Design xBTC: a programmable Bitcoin wrapper. It must implement the beaming protocol using the beamed_outs mapping of SHA256 hashes for destination UTXOs on Cardano.",
+                      icon: Zap,
+                      type: CharmType.XBTC
+                    },
+                    { 
+                      title: "Recursive Yield Protocol", 
+                      desc: "App contract that tracks yield accrual across recursive state updates without transaction history traversal.", 
+                      prompt: "Implement a logic contract for a recursive yield protocol. Use the 'datum' field to store cumulative yield and verify correct updates using charms-lib recursive spell proofs.",
+                      icon: GitCommit,
+                      type: CharmType.LOGIC
+                    }
+                  ].map((guide, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => {
+                        setActiveType(guide.type);
+                        handleForge(guide.prompt);
+                      }}
+                      className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl text-left space-y-4 hover:bg-indigo-500/5 hover:border-indigo-500/20 transition-all group relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                        <guide.icon className="w-12 h-12" />
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600/20 group-hover:text-indigo-400 transition-all">
+                        <FileCode className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-black text-white uppercase tracking-wider">{guide.title}</h4>
+                        <p className="text-[11px] text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors">
+                          {guide.desc}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
+                        Initialize Workflow <ArrowRight className="w-3 h-3" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -268,13 +353,14 @@ const App: React.FC = () => {
                 <button 
                   key={t.type}
                   onClick={() => setActiveType(t.type)}
-                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-2 transition-all ${activeType === t.type ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white/5 text-slate-500 border-white/5'}`}
+                  className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-2 transition-all ${activeType === t.type ? 'bg-indigo-600 text-white border-indigo-500 shadow-xl shadow-indigo-600/20' : 'bg-white/5 text-slate-500 border-white/5'}`}
                 >
                   <t.icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               ))}
             </div>
             <div className="relative group">
+              <div className="absolute -inset-1 bg-indigo-500/10 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-all duration-700"></div>
               <div className="relative bg-[#10101c]/80 border border-white/10 rounded-[2rem] p-2 flex items-end gap-2 shadow-2xl backdrop-blur-xl">
                 <textarea
                   value={prompt}
@@ -284,7 +370,7 @@ const App: React.FC = () => {
                   className="flex-1 bg-transparent border-none focus:ring-0 px-6 py-4 text-slate-200 text-lg placeholder-slate-700 min-h-[60px] max-h-40 resize-none font-light leading-relaxed"
                   rows={1}
                 />
-                <button onClick={handleForge} disabled={!prompt.trim() || genState.isGenerating} className="p-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl disabled:bg-slate-800 transition-all mb-1 mr-1"><Send className="w-5 h-5" /></button>
+                <button onClick={() => handleForge()} disabled={!prompt.trim() || genState.isGenerating} className="p-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl disabled:bg-slate-800 transition-all mb-1 mr-1"><Send className="w-5 h-5" /></button>
               </div>
             </div>
           </div>
