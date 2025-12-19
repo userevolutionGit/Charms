@@ -5,10 +5,12 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
   Sparkles, History, Send, Loader2, 
-  Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal, 
+  Shield, Database, Zap, Code, CheckCircle2, Wallet, Terminal as TerminalIcon, 
   Cpu, Package, Globe, Hash, Info, ArrowRight, Layers, 
   Lock, RefreshCw, Smartphone, ChevronLeft, ChevronDown, HelpCircle,
-  BookOpen, FileText, Activity, Box, MousePointer2, GitCommit, FileCode, Copy
+  BookOpen, FileText, Activity, Box, MousePointer2, GitCommit, FileCode, Copy,
+  Command, X, Monitor, Folder, File, ChevronRight, Layout, Trash2,
+  Users, Key, ShoppingCart
 } from 'lucide-react';
 import { Charm, CharmType, GenerationState, WalletConfig } from './types';
 import { 
@@ -91,6 +93,217 @@ const AccordionItem: React.FC<{ title: string; children: React.ReactNode; isOpen
   </div>
 );
 
+// --- CLI Playground Component ---
+
+const TerminalPlayground: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const INITIAL_HISTORY: { type: 'input' | 'output' | 'error' | 'info'; content: string }[] = [
+    { type: 'info', content: 'Charms Virtual CLI [Version 0.1.0]' },
+    { type: 'info', content: '(c) 2025 Charms Protocol. All spells reserved.' },
+    { type: 'info', content: 'Type "help" to see available commands.' },
+  ];
+  const [history, setHistory] = useState<{ type: 'input' | 'output' | 'error' | 'info'; content: string }[]>(INITIAL_HISTORY);
+  const [inputValue, setInputValue] = useState('');
+  const [currentApp, setCurrentApp] = useState<string | null>(null);
+  const [files, setFiles] = useState<string[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [history]);
+
+  const processCommand = (fullCmd: string) => {
+    const cmd = fullCmd.trim().toLowerCase();
+    const parts = cmd.split(' ');
+    const base = parts[0];
+
+    if (base === 'help') {
+      return { type: 'output', content: 'Available Commands:\n  charms-app new <name>  - Create a new enchanted app\n  charms-app build       - Compile app to RISC-V ELF\n  charms-app vk          - Extract verification key\n  charms-app help        - Show CLI help\n  ls                     - List project files\n  clear                  - Clear terminal history\n  exit                   - Close playground' };
+    } else if (base === 'clear') {
+      setHistory([]);
+      return null;
+    } else if (base === 'exit') {
+      onClose();
+      return null;
+    } else if (base === 'ls') {
+      if (!currentApp) {
+        return { type: 'output', content: 'No active project. Use "charms-app new <name>" to start.' };
+      } else {
+        return { type: 'output', content: files.join('  ') || '(Empty project)' };
+      }
+    } else if (base === 'charms-app') {
+      const sub = parts[1];
+      if (sub === 'new') {
+        const name = parts[2] || 'my-charm';
+        setCurrentApp(name);
+        setFiles(['Cargo.toml', 'src/main.rs', 'App.toml']);
+        return { type: 'output', content: `Created new Charms app: ${name}\nInitialized Cargo workspace with charms-lib v0.1.0` };
+      } else if (sub === 'build') {
+        if (!currentApp) {
+          return { type: 'error', content: 'Error: No project found in current directory.' };
+        } else {
+          setTimeout(() => {
+            setHistory(prev => [...prev, { type: 'output', content: '   Compiling charms-lib v0.1.0\n   Compiling ' + currentApp + ' v0.1.0\n    Finished release [optimized] target(s) in 2.45s\n    Artifact saved: target/riscv32im-zkvm-elf/release/app.elf' }]);
+          }, 1000);
+          return { type: 'info', content: 'Compiling project...' };
+        }
+      } else if (sub === 'vk') {
+        if (!currentApp) {
+           return { type: 'error', content: 'Error: Build artifact not found. Run "charms-app build" first.' };
+        } else {
+          return { type: 'output', content: `Verification Key extracted from ELF:\n${STUDIO_VK}` };
+        }
+      } else if (sub === 'help') {
+        return { type: 'output', content: 'charms-app - The official Charms SDK CLI\n\nUSAGE:\n    charms-app <SUBCOMMAND>\n\nSUBCOMMANDS:\n    new <NAME>    Create a new charms project\n    build         Build the app for zkVM target\n    vk            Show verification key\n    help          Print this message' };
+      } else {
+        return { type: 'error', content: `Unknown subcommand: ${sub}` };
+      }
+    } else {
+      return { type: 'error', content: `Command not found: ${base}` };
+    }
+  };
+
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    const result = processCommand(inputValue);
+    setHistory(prev => [...prev, { type: 'input', content: inputValue }]);
+    if (result) setHistory(prev => [...prev, result as any]);
+    setInputValue('');
+  };
+
+  const runBlueprint = (name: string) => {
+    const cmd = `charms-app new ${name}`;
+    setHistory(prev => [...prev, { type: 'input', content: cmd }]);
+    const result = processCommand(cmd);
+    if (result) setHistory(prev => [...prev, result as any]);
+  };
+
+  const BLUEPRINTS = [
+    { id: 'stablecoin', name: 'cUSD Stable', icon: Smartphone, desc: 'Oracle-backed asset' },
+    { id: 'yield', name: 'Yield Farm', icon: GitCommit, desc: 'Recursive accrual' },
+    { id: 'dex', name: 'UniCharm LP', icon: Layers, desc: 'eUTXO AMM pool' },
+    { id: 'governance', name: 'ZK-DAO', icon: Users, desc: 'Private voting weight' },
+    { id: 'identity', name: 'SoulCharm', icon: Shield, desc: 'Non-transferable ID' },
+    { id: 'private-vault', name: 'Stealth Box', icon: Lock, desc: 'Hidden UTXO storage' },
+    { id: 'bazaar', name: 'Mythic Swaps', icon: ShoppingCart, desc: 'Atomic NFT trading' }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-10 bg-black/80 backdrop-blur-xl">
+      <div className="bg-[#0a0a14] border border-white/10 rounded-[2rem] w-full max-w-6xl h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+              <Monitor className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest font-outfit">CLI Playground</h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Simulated Charms Shell</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setHistory([])} 
+              className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-red-400 transition-colors flex items-center gap-2 group"
+              title="Clear Terminal"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline-block">Clear</span>
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebars Container */}
+          <div className="hidden lg:flex w-72 flex-col border-r border-white/5 overflow-y-auto custom-scrollbar">
+            {/* Explorer Section */}
+            <div className="p-6 space-y-6 border-b border-white/5">
+              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Folder className="w-3.5 h-3.5" /> Explorer
+              </h4>
+              {currentApp ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-indigo-400">
+                     <ChevronDown className="w-3 h-3" />
+                     <Folder className="w-4 h-4" />
+                     <span className="text-xs font-bold uppercase tracking-wider">{currentApp}</span>
+                  </div>
+                  <div className="pl-6 space-y-3">
+                    {files.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 text-slate-400 group cursor-pointer hover:text-white transition-colors">
+                        <File className="w-3.5 h-3.5 text-slate-600" />
+                        <span className="text-[11px] font-mono">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-600 italic">No project initialized...</p>
+              )}
+            </div>
+
+            {/* Blueprints Section */}
+            <div className="p-6 space-y-6">
+              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Layout className="w-3.5 h-3.5" /> App Blueprints
+              </h4>
+              <div className="space-y-2">
+                {BLUEPRINTS.map((bp) => (
+                  <button 
+                    key={bp.id}
+                    onClick={() => runBlueprint(bp.id)}
+                    className="w-full text-left p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all group"
+                  >
+                    <div className="flex items-center gap-3 mb-1">
+                      <bp.icon className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-300 group-hover:text-white">{bp.name}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-600 group-hover:text-slate-400 leading-tight">{bp.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Terminal View */}
+          <div className="flex-1 flex flex-col bg-black/40 font-mono text-sm">
+            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-2 custom-scrollbar">
+              {history.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-slate-800 space-y-4">
+                  <TerminalIcon className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-20">Terminal Cleared</p>
+                </div>
+              )}
+              {history.map((h, i) => (
+                <div key={i} className={`${h.type === 'error' ? 'text-red-400' : h.type === 'info' ? 'text-indigo-400' : h.type === 'input' ? 'text-emerald-400' : 'text-slate-300'} whitespace-pre-wrap leading-relaxed`}>
+                  {h.type === 'input' && <span className="text-slate-600 mr-2">$</span>}
+                  {h.content}
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-white/[0.01] border-t border-white/5">
+              <form onSubmit={handleCommand} className="flex items-center gap-3">
+                <span className="text-emerald-500 font-bold">$</span>
+                <input 
+                  autoFocus
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type a command or click a blueprint..."
+                  className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-slate-200 placeholder-slate-700 font-mono"
+                />
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 const App: React.FC = () => {
@@ -100,6 +313,7 @@ const App: React.FC = () => {
   const [genState, setGenState] = useState<GenerationState>({ isGenerating: false, step: '', progress: 0, logs: [] });
   const [appId, setAppId] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showPlayground, setShowPlayground] = useState(false);
   const [onboardingTab, setOnboardingTab] = useState<'welcome' | 'encyclopedia'>('welcome');
   const [openAccordion, setOpenAccordion] = useState<string | null>('tooling');
   
@@ -235,9 +449,15 @@ const App: React.FC = () => {
               </div>
               <button 
                 onClick={() => { setOnboardingTab('encyclopedia'); setOpenAccordion('tooling'); setShowOnboarding(true); }}
-                className="w-full py-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest hover:text-indigo-300 flex items-center justify-center gap-2"
+                className="w-full py-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest hover:text-indigo-300 flex items-center justify-center gap-2 px-2"
               >
-                <Terminal className="w-3 h-3" /> Dev Docs
+                <BookOpen className="w-3 h-3" /> Dev Docs
+              </button>
+              <button 
+                onClick={() => setShowPlayground(true)}
+                className="w-full py-2 bg-indigo-600/10 hover:bg-indigo-600/20 rounded-lg text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+              >
+                <TerminalIcon className="w-3 h-3" /> CLI Playground
               </button>
             </div>
           </section>
@@ -324,7 +544,7 @@ const App: React.FC = () => {
                     { 
                       title: "Recursive Yield Protocol", 
                       desc: "App contract that tracks yield accrual across recursive state updates without transaction history traversal.", 
-                      prompt: "Implement a logic contract for a recursive yield protocol. Use the 'datum' field to store cumulative yield and verify correct updates using charms-lib recursive spell proofs.",
+                      prompt: "Implement a logic contract for a recursive yield protocol. Use the 'datum' field to store cumulative yield and verify correct updates using charms-lib recursive_spell proofs.",
                       icon: GitCommit,
                       type: CharmType.LOGIC
                     }
@@ -451,7 +671,9 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Onboarding Overlay */}
+      {/* Overlays */}
+      {showPlayground && <TerminalPlayground onClose={() => setShowPlayground(false)} />}
+      
       {showOnboarding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
           <div className="bg-[#0f0f1a] border border-white/10 rounded-[3rem] max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -467,7 +689,7 @@ const App: React.FC = () => {
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Protocol implementation via charms-lib</p>
                   </div>
                 </div>
-                <button onClick={() => setShowOnboarding(false)} className="p-3 hover:bg-white/5 rounded-full text-slate-500 transition-colors"><Terminal className="w-5 h-5" /></button>
+                <button onClick={() => setShowOnboarding(false)} className="p-3 hover:bg-white/5 rounded-full text-slate-500 transition-colors"><TerminalIcon className="w-5 h-5" /></button>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
@@ -515,6 +737,44 @@ pub fn app_contract(
 
     logic_valid
 }`} />
+                  </AccordionItem>
+
+                  <AccordionItem 
+                    title="CLI Reference: charms-app" 
+                    isOpen={openAccordion === 'cli'} 
+                    onClick={() => setOpenAccordion(openAccordion === 'cli' ? null : 'cli')}
+                    icon={<Command className="w-4 h-4" />}
+                  >
+                    <p>The <code>charms-app</code> CLI tool manages the lifecycle of your enchanted applications. Below are the primary commands for development and deployment:</p>
+                    
+                    <div className="space-y-8 mt-6">
+                      <div>
+                        <h4 className="text-white uppercase text-[10px] tracking-widest mb-2">1. Initialize a new app</h4>
+                        <p className="text-xs text-slate-500 mb-3">Creates a new project structure with default ToAD templates.</p>
+                        <CodeBlock code="$ charms-app new my-stablecoin" language="bash" />
+                      </div>
+
+                      <div>
+                        <h4 className="text-white uppercase text-[10px] tracking-widest mb-2">2. Build for RISC-V</h4>
+                        <p className="text-xs text-slate-500 mb-3">Compiles your Rust logic into a verifiable ELF file compatible with SP1/zkVM.</p>
+                        <CodeBlock code="$ charms-app build" language="bash" />
+                      </div>
+
+                      <div>
+                        <h4 className="text-white uppercase text-[10px] tracking-widest mb-2">3. Extract Verification Key (VK)</h4>
+                        <p className="text-xs text-slate-500 mb-3">Prints the SHA256 hash of the verification key used for ledger registration.</p>
+                        <CodeBlock code="$ charms-app vk" language="bash" />
+                        <div className="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl mt-2">
+                          <p className="text-[10px] font-mono text-emerald-400">Output: 8e877d70518a5b28f5221e70bd7ff7692a603f3a26d7076a5253e21c304a354f</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-white uppercase text-[10px] tracking-widest mb-2">4. Help & Documentation</h4>
+                        <p className="text-xs text-slate-500 mb-3">Access full command documentation and usage details.</p>
+                        <CodeBlock code="$ charms-app help" language="bash" />
+                      </div>
+                    </div>
                   </AccordionItem>
 
                   <AccordionItem 
